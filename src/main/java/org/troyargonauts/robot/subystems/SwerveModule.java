@@ -80,7 +80,7 @@ public class SwerveModule extends SubsystemBase{
     public SwerveModuleState getState() {
         // Apply chassis angular offset to the encoder position to get the position
         // relative to the chassis.
-        return new SwerveModuleState(getVelocity(driveEncoder),
+        return new SwerveModuleState(getVelocity(driveMotor),
             new Rotation2d(turnEncoder - chassisAngularOffset));
     }
 
@@ -129,8 +129,7 @@ public class SwerveModule extends SubsystemBase{
     }
 
     
-    public double dog(TalonFX m){
-        return m.getVelocity();
-        ;
+    public double getVelocity(TalonFX m){
+        return driveMotor.getVelocity().getValue();
     }
 }

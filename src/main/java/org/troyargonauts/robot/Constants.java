@@ -26,16 +26,17 @@ public final class Constants {
         double TURN_I = 0.0;
         double TURN_D = 0.0;
 
-
+        public static final int kDrivingMotorPinionTeeth = 14;
+        double kWheelDiameterMeters = 0;
         
         // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear, 15 teeth on the bevel pinion
         public static final double kDrivingMotorReduction = (45.0 * 22) / (kDrivingMotorPinionTeeth * 15);
 
 
-        public static final double drivingEncoderPositionFactor = (wheelDiameterMeters * Math.PI) / drivingMotorReduction;
+        public static final double drivingEncoderPositionFactor = (kWheelDiameterMeters * Math.PI) / kDrivingMotorReduction;
 
 
-
+                
          // Driving Parameters - Note that these are not the maximum capable speeds of
         // the robot, rather the allowed maximum speeds
         public static final double kMaxSpeedMetersPerSecond = 4.8;
@@ -86,8 +87,11 @@ public final class Constants {
         // the steering motor in the MAXSwerve Module.
         public static final boolean kTurningEncoderInverted = true;
 
+        public static final int kFreeSpeedRpm = 6000; //Free Speed RPM of Kraken
+
+
         // Calculations required for driving motor conversion factors and feed forward
-        public static final double kDrivingMotorFreeSpeedRps = NeoMotorConstants.kFreeSpeedRpm / 60;
+        public static final double kDrivingMotorFreeSpeedRps = kFreeSpeedRpm / 60;
         public static final double kWheelDiameterMeters = 0.0762;
         public static final double kWheelCircumferenceMeters = kWheelDiameterMeters * Math.PI;
         // 45 teeth on the wheel's bevel gear, 22 teeth on the first-stage spur gear, 15 teeth on the bevel pinion
