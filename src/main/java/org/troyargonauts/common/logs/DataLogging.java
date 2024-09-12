@@ -2,7 +2,7 @@ package org.troyargonauts.common.logs;
 
 import java.io.File;
 
-import com.ctre.phoenix.sensors.Pigeon2;
+import com.ctre.phoenix6.hardware.Pigeon2;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.troyargonauts.common.util.imu.Pigeon;
@@ -13,7 +13,7 @@ import java.io.IOException;
 public class DataLogging extends SubsystemBase {
     private File logFile;
     private FileWriter logWriter;
-    private Pigeon pigeon;
+    private Pigeon2 pigeon;
 
     public DataLogging() {
         logFile = new File("/home/lvuser/data_log.csv"); // Replace the path with the desired file location
@@ -55,7 +55,7 @@ public class DataLogging extends SubsystemBase {
         }
     }
 
-    public Pigeon getPigeon() {
+    public Pigeon2 getPigeon() {
         return pigeon;
     }
 }
