@@ -1,5 +1,7 @@
 package org.troyargonauts.robot.subystems;
 
+import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.CANSparkMax;
@@ -19,6 +21,9 @@ public class SwerveModule extends SubsystemBase{
     private double driveEncoder, turnEncoder;
 
     private TalonFXConfiguration config = new TalonFXConfiguration();
+
+    PositionVoltage positionVoltage = new PositionVoltage(0).withSlot(0);
+    VelocityVoltage velocityVoltage = new VelocityVoltage(0).withSlot(1);
     private Slot0Configs driveConfig = config.Slot0;
     private Slot1Configs turnConfig = config.Slot1;
 
@@ -36,8 +41,6 @@ public class SwerveModule extends SubsystemBase{
         driveEncoder = 0;
         turnEncoder = 0;
 
-        driveMotor.setNeutralMode(NeutralModeValue.Brake);
-        turnMotor.setNeutralMode(NeutralModeValue.Brake);
 
         
         driveConfig.kP = DRIVE_P;
@@ -66,6 +69,9 @@ public class SwerveModule extends SubsystemBase{
 
     }
 
+    /**
+
+     */
     public double convertEncoderToMeters(){
         //DO THIS
         return 0.0;
@@ -80,7 +86,7 @@ public class SwerveModule extends SubsystemBase{
     public SwerveModuleState getState() {
         // Apply chassis angular offset to the encoder position to get the position
         // relative to the chassis.
-        return new SwerveModuleState(getVelocity(driveMotor),
+        return new SwerveModuleState(getVelocity(),
             new Rotation2d(turnEncoder - chassisAngularOffset));
     }
 
@@ -114,9 +120,9 @@ public class SwerveModule extends SubsystemBase{
         SwerveModuleState optimizedDesiredState = SwerveModuleState.optimize(correctedDesiredState,
             new Rotation2d(turnEncoder));
 
-        // Command driving and turning SPARKS MAX towards their respective setpoints.
-        m_drivingPIDController.setReference(optimizedDesiredState.speedMetersPerSecond, CANSparkMax.ControlType.kVelocity);
-        m_turningPIDController.setReference(optimizedDesiredState.angle.getRadians(), CANSparkMax.ControlType.kPosition);
+        // Command driving and turning motors towards their respective setpoints (velocity and position).
+        driveMotor.setControl(velocityVoltage.withVelocity(optimizedDesiredState.speedMetersPerSecond));
+        turnMotor.setControl(positionVoltage.withPosition(optimizedDesiredState.angle.getRadians()));
 
         this.desiredState = desiredState;
     }
@@ -128,8 +134,24 @@ public class SwerveModule extends SubsystemBase{
         turnMotor.setPosition(0);
     }
 
-    
-    public double getVelocity(TalonFX m){
+    /*
+
+     */
+    public void resetDrive(){
+        driveMotor.setPosition(0);
+    }
+
+    /**
+
+     */
+    public void resetTurn(){
+        turnMotor.setPosition(0);
+    }
+
+    /**
+
+     */
+    public double getVelocity(){
         return driveMotor.getVelocity().getValue();
     }
 }
