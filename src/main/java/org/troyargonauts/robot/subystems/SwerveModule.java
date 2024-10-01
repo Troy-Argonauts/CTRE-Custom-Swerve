@@ -18,7 +18,7 @@ import static org.troyargonauts.robot.Constants.Swerve.*;
 
 public class SwerveModule extends SubsystemBase{
     private TalonFX driveMotor, turnMotor;
-    private double driveEncoder, turnEncoder;
+    public double driveEncoder, turnEncoder;
 
     private TalonFXConfiguration config = new TalonFXConfiguration();
 
@@ -61,20 +61,13 @@ public class SwerveModule extends SubsystemBase{
         this.chassisAngularOffset = chassisAngularOffset;
     }
 
+    /**
+     * Updates the driveEncoder and turnEncoder periodically.
+     */
     @Override
     public void periodic() {
         driveEncoder = driveMotor.getPosition().getValueAsDouble();
         turnEncoder = turnMotor.getPosition().getValueAsDouble();
-        //ADD THE CONVERSION FACTOR TO VELOCITY SO THAT IT CAN WORK WITH THE WPILIB API
-
-    }
-
-    /**
-
-     */
-    public double convertEncoderToMeters(){
-        //DO THIS
-        return 0.0;
     }
 
 
@@ -134,24 +127,21 @@ public class SwerveModule extends SubsystemBase{
         turnMotor.setPosition(0);
     }
 
-    /*
-
-     */
-    public void resetDrive(){
+    /** Zeroes the driveMotor encoder on the SwerveModule */
+    public void resetDriveEncoder(){
         driveMotor.setPosition(0);
     }
 
-    /**
-
-     */
-    public void resetTurn(){
+    /** Zeroes the turnMotor encoder on the SwerveModule */
+    public void resetTurnEncoder(){
         turnMotor.setPosition(0);
     }
 
     /**
-
+     * Returns the velocity of the drive motor in meters per second.
+     * @return velocity of the drive motor in meters per second
      */
     public double getVelocity(){
-        return driveMotor.getVelocity().getValue();
+        return driveMotor.getVelocity().getValue() * WHEEL_CIRCUMFERENCE_METERS;
     }
 }

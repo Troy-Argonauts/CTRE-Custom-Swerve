@@ -1,5 +1,18 @@
 package org.troyargonauts.robot.subystems;
 
+import static org.troyargonauts.robot.Constants.Swerve.BACK_LEFT_CHASSIS_ANGULAR_OFFSET;
+import static org.troyargonauts.robot.Constants.Swerve.BACK_RIGHT_CHASSIS_ANGULAR_OFFSET;
+import static org.troyargonauts.robot.Constants.Swerve.FRONT_LEFT_CHASSIS_ANGULAR_OFFSET;
+import static org.troyargonauts.robot.Constants.Swerve.FRONT_LEFT_DRIVING_CAN_ID;
+import static org.troyargonauts.robot.Constants.Swerve.FRONT_LEFT_TURNING_CAN_ID;
+import static org.troyargonauts.robot.Constants.Swerve.FRONT_RIGHT_CHASSIS_ANGULAR_OFFSET;
+import static org.troyargonauts.robot.Constants.Swerve.FRONT_RIGHT_DRIVING_CAN_ID;
+import static org.troyargonauts.robot.Constants.Swerve.FRONT_RIGHT_TURNING_CAN_ID;
+import static org.troyargonauts.robot.Constants.Swerve.BACK_LEFT_DRIVING_CAN_ID;
+import static org.troyargonauts.robot.Constants.Swerve.BACK_LEFT_TURNING_CAN_ID;
+import static org.troyargonauts.robot.Constants.Swerve.BACK_RIGHT_DRIVING_CAN_ID;
+import static org.troyargonauts.robot.Constants.Swerve.BACK_RIGHT_TURNING_CAN_ID;
+
 import org.troyargonauts.common.swerve.SwerveUtils;
 import org.troyargonauts.robot.Constants.Swerve;
 
@@ -20,24 +33,24 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class SwerveSubsystem extends SubsystemBase {
     // Create SwerveModules
     private final SwerveModule frontLeftModule = new SwerveModule(
-        0,
-        0,
-        0);
+        FRONT_LEFT_DRIVING_CAN_ID,
+        FRONT_LEFT_TURNING_CAN_ID,
+        FRONT_LEFT_CHASSIS_ANGULAR_OFFSET);
 
     private final SwerveModule frontRightModule = new SwerveModule(
-        0,
-        0,
-        0);
+        FRONT_RIGHT_DRIVING_CAN_ID,
+        FRONT_RIGHT_TURNING_CAN_ID,
+        FRONT_RIGHT_CHASSIS_ANGULAR_OFFSET);
 
     private final SwerveModule backLeftModule = new SwerveModule(
-        0,
-        0,
-        0);
+        BACK_LEFT_DRIVING_CAN_ID,
+        BACK_LEFT_TURNING_CAN_ID,
+        BACK_LEFT_CHASSIS_ANGULAR_OFFSET);
         
     private final SwerveModule backRightModule = new SwerveModule(
-        0,
-        0,
-        0);
+        BACK_RIGHT_DRIVING_CAN_ID,
+        BACK_RIGHT_TURNING_CAN_ID,
+        BACK_RIGHT_CHASSIS_ANGULAR_OFFSET);
 
 
     // The gyro sensor
@@ -71,6 +84,10 @@ public class SwerveSubsystem extends SubsystemBase {
     }   
 
 
+    /**
+     * Updates the odometry to the current positions of all the wheels and gyro, outputs the turn and drive encoder values for 
+     * each swerve module, and also outputs the gyro angle.
+     */
     @Override
     public void periodic() {
         // Update the odometry in the periodic block
@@ -84,6 +101,16 @@ public class SwerveSubsystem extends SubsystemBase {
             });
 
         SmartDashboard.putNumber("Gyro Angle", gyro.getAngle());
+        
+        SmartDashboard.putNumber("FL Drive Encoder", frontLeftModule.driveEncoder);
+        SmartDashboard.putNumber("FR Drive Encoder", frontRightModule.driveEncoder);
+        SmartDashboard.putNumber("BL Drive Encoder", backLeftModule.driveEncoder);
+        SmartDashboard.putNumber("BR Drive Encoder", backRightModule.driveEncoder);
+
+        SmartDashboard.putNumber("FL Turn Encoder", frontLeftModule.turnEncoder);
+        SmartDashboard.putNumber("FR Turn Encoder", frontRightModule.turnEncoder);
+        SmartDashboard.putNumber("BL Turn Encoder", backLeftModule.turnEncoder);
+        SmartDashboard.putNumber("BR Turn Encoder", backRightModule.turnEncoder);
     }
 
 
@@ -132,51 +159,52 @@ public class SwerveSubsystem extends SubsystemBase {
         double ySpeedCommanded;
 
         if (rateLimit) {
-        // Convert XY to polar for rate limiting
-        double inputTranslationDir = Math.atan2(ySpeed, xSpeed);
-        double inputTranslationMag = Math.sqrt(Math.pow(xSpeed, 2) + Math.pow(ySpeed, 2));
+            // Convert XY to polar for rate limiting
+            double inputTranslationDir = Math.atan2(ySpeed, xSpeed);
+            double inputTranslationMag = Math.sqrt(Math.pow(xSpeed, 2) + Math.pow(ySpeed, 2));
 
-        // Calculate the direction slew rate based on an estimate of the lateral acceleration
-        double directionSlewRate;
-        if (currentTranslationMag != 0.0) {
-            directionSlewRate = Math.abs(Swerve.DIRECTION_SLEW_RATE / currentTranslationMag);
-        } else {
-            directionSlewRate = 500.0; //some high number that means the slew rate is effectively instantaneous
-        }
-        
+            // Calculate the direction slew rate based on an estimate of the lateral acceleration
+            double directionSlewRate;
+            if (currentTranslationMag != 0.0) {
+                directionSlewRate = Math.abs(Swerve.DIRECTION_SLEW_RATE / currentTranslationMag);
+            } else {
+                directionSlewRate = 500.0; //some high number that means the slew rate is effectively instantaneous
+            }
+            
 
-        double currentTime = WPIUtilJNI.now() * 1e-6;
-        double elapsedTime = currentTime - prevTime;
-        double angleDif = SwerveUtils.AngleDifference(inputTranslationDir, currentTranslationDir);
-        if (angleDif < 0.45*Math.PI) {
-            currentTranslationDir = SwerveUtils.StepTowardsCircular(currentTranslationDir, inputTranslationDir, directionSlewRate * elapsedTime);
-            currentTranslationMag = magLimiter.calculate(inputTranslationMag);
-        }
-        else if (angleDif > 0.85*Math.PI) {
-            if (currentTranslationMag > 1e-4) { //some small number to avoid floating-point errors with equality checking
-            // keep currentTranslationDir unchanged
-            currentTranslationMag = magLimiter.calculate(0.0);
+            double currentTime = WPIUtilJNI.now() * 1e-6;
+            double elapsedTime = currentTime - prevTime;
+            double angleDif = SwerveUtils.AngleDifference(inputTranslationDir, currentTranslationDir);
+            if (angleDif < 0.45*Math.PI) {
+                currentTranslationDir = SwerveUtils.StepTowardsCircular(currentTranslationDir, inputTranslationDir, directionSlewRate * elapsedTime);
+                currentTranslationMag = magLimiter.calculate(inputTranslationMag);
+            }
+            else if (angleDif > 0.85*Math.PI) {
+                if (currentTranslationMag > 1e-4) { //some small number to avoid floating-point errors with equality checking
+                    // keep currentTranslationDir unchanged
+                    currentTranslationMag = magLimiter.calculate(0.0);
+                }
+                else {
+                    currentTranslationDir = SwerveUtils.WrapAngle(currentTranslationDir + Math.PI);
+                    currentTranslationMag = magLimiter.calculate(inputTranslationMag);
+                }
             }
             else {
-            currentTranslationDir = SwerveUtils.WrapAngle(currentTranslationDir + Math.PI);
-            currentTranslationMag = magLimiter.calculate(inputTranslationMag);
+                currentTranslationDir = SwerveUtils.StepTowardsCircular(currentTranslationDir, inputTranslationDir, directionSlewRate * elapsedTime);
+                currentTranslationMag = magLimiter.calculate(0.0);
             }
-        }
+            prevTime = currentTime;
+            
+            xSpeedCommanded = currentTranslationMag * Math.cos(currentTranslationDir);
+            ySpeedCommanded = currentTranslationMag * Math.sin(currentTranslationDir);
+            currentRotation = rotLimiter.calculate(rot);
+
+
+        } 
         else {
-            currentTranslationDir = SwerveUtils.StepTowardsCircular(currentTranslationDir, inputTranslationDir, directionSlewRate * elapsedTime);
-            currentTranslationMag = magLimiter.calculate(0.0);
-        }
-        prevTime = currentTime;
-        
-        xSpeedCommanded = currentTranslationMag * Math.cos(currentTranslationDir);
-        ySpeedCommanded = currentTranslationMag * Math.sin(currentTranslationDir);
-        currentRotation = rotLimiter.calculate(rot);
-
-
-        } else {
-        xSpeedCommanded = xSpeed;
-        ySpeedCommanded = ySpeed;
-        currentRotation = rot;
+            xSpeedCommanded = xSpeed;
+            ySpeedCommanded = ySpeed;
+            currentRotation = rot;
         }
 
         // Convert the commanded speeds into the correct units for the drivetrain
@@ -223,12 +251,28 @@ public class SwerveSubsystem extends SubsystemBase {
     }
 
 
-    /** Resets the drive encoders to currently read a position of 0. */
+    /** Resets the drive and turn encoders to a position of 0. */
     public void resetEncoders() {
         frontLeftModule.resetEncoders();
         frontRightModule.resetEncoders();
         backLeftModule.resetEncoders();
         backRightModule.resetEncoders();
+    }
+
+    /** Resets the turn encoders to a position of 0. */
+    public void resetTurnEncoders() {
+        frontLeftModule.resetTurnEncoder();
+        frontRightModule.resetTurnEncoder();
+        backLeftModule.resetTurnEncoder();
+        backRightModule.resetTurnEncoder();
+    }
+
+    /** Resets the drive encoders to a position of 0. */
+    public void resetDriveEncoders() {
+        frontLeftModule.resetDriveEncoder();
+        frontRightModule.resetDriveEncoder();
+        backLeftModule.resetDriveEncoder();
+        backRightModule.resetDriveEncoder();
     }
 
     /** Zeroes the heading of the robot. */
@@ -254,27 +298,84 @@ public class SwerveSubsystem extends SubsystemBase {
         return gyro.getRate() * (Swerve.GYRO_REVERSED ? -1.0 : 1.0);
     }
 
-    public double getForwardEncoder() {
-        return (-(frontLeftModule.getPosition().distanceMeters + frontRightModule.getPosition().distanceMeters + backLeftModule.getPosition().distanceMeters + backRightModule.getPosition().distanceMeters) / 4);
+    /**
+     * Returns the forward position of the robot in meters.
+     * @return Forward position of the robot in meters
+     */
+    public double getForwardPosition() {
+        return (-(getFLDrivePosition() + getFRDrivePosition() + getBLDrivePosition() + getBRDrivePosition()) / 4);
     }
 
-    public double getStrafeEncoder() {
-        return ((frontLeftModule.getPosition().distanceMeters - frontRightModule.getPosition().distanceMeters - backLeftModule.getPosition().distanceMeters + backRightModule.getPosition().distanceMeters) / 4);
+    /**
+     * Returns the strafe position of the robot in meters
+     * @return Stafe position of the robot in meters
+     */
+    public double getStrafePosition() {
+        return ((getFLDrivePosition() - getFRDrivePosition() - getBLDrivePosition() + getBRDrivePosition()) / 4);
     }
 
-    public double getFLEncoder(){
+    /**
+     * Returns the front left swerve module's drive encoder position in meters.
+     * @return Front left swerve module's drive encoder position in meters
+     */
+    public double getFLDrivePosition(){
         return frontLeftModule.getPosition().distanceMeters;
     }
 
-    public double getFREncoder(){
+    /**
+     * Returns the front right swerve module's drive encoder position in meters.
+     * @return Front right swerve module's drive encoder position in meters
+     */
+    public double getFRDrivePosition(){
         return frontRightModule.getPosition().distanceMeters;
     }
 
-    public double getBLEncoder(){
+    /**
+     * Returns the back left swerve module's drive encoder position in meters.
+     * @return Back left swerve module's drive encoder position in meters
+     */
+    public double getBLDrivePosition(){
         return backLeftModule.getPosition().distanceMeters;
     }
 
-    public double getBREncoder(){
+
+    /**
+     * Returns the back right swerve module's drive encoder position in meters.
+     * @return Back right swerve module's drive encoder position in meters
+     */
+    public double getBRDrivePosition(){
         return backRightModule.getPosition().distanceMeters;
+    }
+
+    /**
+     * Returns the front right swerve module's turn encoder position in meters.
+     * @return Front right swerve module's turn encoder position in meters
+     */
+    public Rotation2d getFRTurnPosition(){
+        return frontRightModule.angle;
+    }
+
+    /**
+     * Returns front left the swerve module's turn encoder position in meters.
+     * @return Front left swerve module's turn encoder position in meters
+     */
+    public Rotation2d getFLTurnPosition(){
+        return frontLeftModule.angle;
+    }
+
+    /**
+     * Returns the back right swerve module's turn encoder position in meters.
+     * @return Back right swerve module's turn encoder position in meters
+     */
+    public Rotation2d getBRTurnPosition(){
+        return backRightModule.angle;
+    }
+
+    /**
+     * Returns the back left swerve module's turn encoder position in meters.
+     * @return Back left swerve module's turn encoder position in meters
+     */
+    public Rotation2d getBLTurnPosition(){
+        return backLeftModule.angle;
     }
 }
